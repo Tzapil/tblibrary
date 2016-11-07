@@ -162,8 +162,8 @@
 (defn set_webhook
     ([token webhook_url]
         (let [url (str base_url token "/setWebhook")
-              data {:url webhook_url}]
-                    (message url data)))
+              data {:multipart [{:name "url" :content webhook_url}]}]
+                    (client/post url data)))
     ([token webhook_url certificate]
         (let [url (str base_url token "/setWebhook")
               data {:multipart [{:name "url" :content webhook_url}

@@ -10,7 +10,7 @@
         (bot/remove_webhook token)
         (println "Pause: 5s")
         (async/<!! (async/timeout 5000))
-        (let [listen_url (str "https://" listen ":" port "/" url_path)
+        (let [listen_url (str "https://" listen ":" port "/" url_path "/")
               c (async/chan)]
             (println (str "Listen: " listen_url))
             (bot/set_webhook token listen_url)

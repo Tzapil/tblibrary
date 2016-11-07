@@ -5,6 +5,7 @@
     ([port handler]
         (jetty/run-jetty handler {
             :port port
+            :join? false
         }))
     ([port handler keystore key]
         (jetty/run-jetty handler {
