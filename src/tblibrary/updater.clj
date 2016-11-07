@@ -6,18 +6,37 @@
               [cheshire.core :as cheshire]))
 
 (defn start_webhook
-    ([token listen port url_path certificate keystore pswd]
+    ([token listen port url_path]
         (bot/remove_webhook token)
+        (println "Pause: 5s")
+        (async/<!! (async/timeout 5000))
         (let [listen_url (str "https://" listen ":" port "/" url_path)
               c (async/chan)]
             (println (str "Listen: " listen_url))
-            (bot/set_webhook token listen_url certificate)
-            (async/go (server/start_server port keystore pswd 
+            (bot/set_webhook token listen_url)
+            (async/go (server/start_server port
                 (fn [request]
                     (let [json (cheshire/parse-string (slurp (:body request)) true)]
                         (println "REQUEST")
                         (println json)
                         (async/go (async/>! c [json]))))))
+            c)))
+
+(defn start_webhook_ssl
+    ([token listen port url_path certificate keystore pswd]
+        (bot/remove_webhook token)
+        (println "Pause: 5s")
+        (async/<!! (async/timeout 5000))
+        (let [listen_url (str "https://" listen ":" port "/" url_path)
+              c (async/chan)]
+            (println (str "Listen: " listen_url))
+            (bot/set_webhook token listen_url certificate)
+            (async/go (server/start_server port 
+                (fn [request]
+                    (let [json (cheshire/parse-string (slurp (:body request)) true)]
+                        (println "REQUEST")
+                        (println json)
+                        (async/go (async/>! c [json])))) keystore pswd))
             c)))
 
 (defn make_poll [token c offset limit timeout]
@@ -53,7 +72,7 @@
 
 (defn _handle [json [handler & other]]
     (if (helpers/wrap ((:pr handler) json))
-        (helpers/wrap ((:f handler) json))
+        ((:f handler) json)
         (if (> (count other) 0)
           (_handle json other))))
 
