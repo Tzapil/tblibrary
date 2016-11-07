@@ -6,7 +6,7 @@
               [cheshire.core :as cheshire]))
 
 (defn start_webhook
-    ([token listen port url_path]
+    ([token listen port url_path listen_port]
         (bot/remove_webhook token)
         (println "Pause: 5s")
         (async/<!! (async/timeout 5000))
@@ -14,7 +14,7 @@
               c (async/chan)]
             (println (str "Listen: " listen_url))
             (bot/set_webhook token listen_url)
-            (async/go (server/start_server port
+            (async/go (server/start_server listen_port
                 (fn [request]
                     (let [json (cheshire/parse-string (slurp (:body request)) true)]
                         (println "REQUEST")
