@@ -1,10 +1,10 @@
 # tblibrary
 
-A Clojure library designed to ... well, that part is up to you.
+A Clojure library designed to make simple bots for Telegram.
 
 ## Usage
 
-FIXME
+This is on clojars, of course. Just add `[tblibrary "0.1.0-SNAPSHOT"]` to your `:dependencies` in your project.clj file.
 
 ## License
 
