@@ -3,39 +3,40 @@
               [tblibrary.bot :as bot]
               [tblibrary.helpers :as helpers]
               [tblibrary.webserver :as server]
-              [cheshire.core :as cheshire]))
+              [cheshire.core :as cheshire]
+              [clojure.tools.logging :as log]))
 
 (defn start_webhook
     ([token listen port url_path listen_port]
         (bot/remove_webhook token)
-        (println "Pause: 5s")
-        (async/<!! (async/timeout 5000))
+        (log/info "After remove_webhook required 2s pause...")
+        (async/<!! (async/timeout 2000))
         (let [listen_url (str "https://" listen ":" port "/" url_path "/")
               c (async/chan)]
-            (println (str "Listen: " listen_url))
             (bot/set_webhook token listen_url)
+            (log/info (str "Webhook set: " listen_url))
             (async/go (server/start_server listen_port
                 (fn [request]
                     (let [json (cheshire/parse-string (slurp (:body request)) true)]
-                        (println "REQUEST")
-                        (println json)
+                        (log/info "Client request: ")
+                        (log/info json)
                         (async/go (async/>! c [json]))))))
             c)))
 
 (defn start_webhook_ssl
     ([token listen port url_path certificate keystore pswd]
         (bot/remove_webhook token)
-        (println "Pause: 5s")
-        (async/<!! (async/timeout 5000))
+        (log/info "After remove_webhook required 2s pause...")
+        (async/<!! (async/timeout 2000))
         (let [listen_url (str "https://" listen ":" port "/" url_path)
               c (async/chan)]
-            (println (str "Listen: " listen_url))
             (bot/set_webhook token listen_url certificate)
+            (log/info (str "Webhook set: " listen_url))
             (async/go (server/start_server port 
                 (fn [request]
                     (let [json (cheshire/parse-string (slurp (:body request)) true)]
-                        (println "REQUEST")
-                        (println json)
+                        (log/info "Client request: ")
+                        (log/info json)
                         (async/go (async/>! c [json])))) keystore pswd))
             c)))
 
@@ -50,7 +51,7 @@
                     (async/go (async/>! c json))
                     (inc (reduce #(max %1 (get %2 :update_id)) offset json)))))
         (catch Exception e
-            (println (str "Caught exception: " (.getMessage e)))
+            (log/error (str "Caught exception: " (.getMessage e)))
             offset)))
 
 (defn long_polling [token c limit timeout pause]
@@ -72,17 +73,14 @@
 
 (defn _handle [json [handler & other]]
     (if (helpers/wrap ((:pr handler) json))
-        (try 
-            ((:f handler) json)
-            (catch Exception e
-                (println (str "Caught exception: " (.getMessage e)))))
+        (helpers/wrap ((:f handler) json))
         (if (> (count other) 0)
           (_handle json other))))
 
 (defn start_handlers [handlers c]
     (async/go-loop []
         (let [data (async/<! c)]
-            (println "Got a value in this loop:" data)
+            (log/info "Start handle data:" data)
             (doseq [json data]
                 (_handle json handlers))
             (recur)))

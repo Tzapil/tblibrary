@@ -1,5 +1,7 @@
 (ns tblibrary.helpers
-    (:require [cheshire.core :as cheshire]))
+    (:require 
+        [cheshire.core :as cheshire]
+        [clojure.tools.logging :as log]))
 
 (defn body_json [req]
     (let [result (cheshire/parse-string (:body req) true)]
@@ -31,4 +33,4 @@
     `(try
         ~@f
         (catch Exception e#
-            (println (str "Caught exception: " (.getMessage e#))))))
+            (log/error (str "Caught exception: " (.getMessage e#))))))

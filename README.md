@@ -4,7 +4,7 @@ A Clojure library designed to make simple bots for Telegram.
 
 ## Usage
 
-This is on clojars, of course. Just add `[tblibrary "0.1.0-SNAPSHOT"]` to your `:dependencies` in your project.clj file.
+This is on clojars, of course. Just add `[tblibrary "0.1.0"]` to your `:dependencies` in your project.clj file.
 
 ## License
 
