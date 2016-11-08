@@ -72,7 +72,10 @@
 
 (defn _handle [json [handler & other]]
     (if (helpers/wrap ((:pr handler) json))
-        ((:f handler) json)
+        (try 
+            ((:f handler) json)
+            (catch Exception e
+                (println (str "Caught exception: " (.getMessage e)))))
         (if (> (count other) 0)
           (_handle json other))))
 
