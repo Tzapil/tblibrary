@@ -51,7 +51,7 @@
                     (async/go (async/>! c json))
                     (inc (reduce #(max %1 (get %2 :update_id)) offset json)))))
         (catch Exception e
-            (log/error (str "Caught exception: " (.getMessage e)))
+            (log/error (.printStackTrace e))
             offset)))
 
 (defn long_polling [token c limit timeout pause]
@@ -68,6 +68,7 @@
     ([token limit timeout]
         (start_polling token limit timeout 1000))
     ([token limit timeout pause]
+        (bot/remove_webhook token) ;; need to remove webhook to pull updates
         (let [c (async/chan)]
             (long_polling token c limit timeout pause))))
 
