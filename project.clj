@@ -1,4 +1,4 @@
-(defproject tblibrary "0.1.0"
+(defproject tblibrary "0.1.1"
   :description "Simple library to create bots with telegram API"
   :url "https://github.com/Tzapil/tblibrary"
   :license {:name "Eclipse Public License"
