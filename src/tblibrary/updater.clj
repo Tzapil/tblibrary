@@ -9,35 +9,52 @@
 (defn start_webhook
     ([token listen port url_path listen_port]
         (bot/remove_webhook token)
+        (log/info token "Webhook removed")
         (log/info "After remove_webhook required 2s pause...")
+
         (async/<!! (async/timeout 2000))
-        (let [listen_url (str "https://" listen ":" port "/" url_path "/")
-              c (async/chan)]
+
+        (let [c (async/chan)
+              listen_url (str "https://" listen ":" port "/" url_path "/")]
             (bot/set_webhook token listen_url)
-            (log/info (str "Webhook set: " listen_url))
-            (async/go (server/start_server listen_port
+            (log/info token "Webhook set: " listen_url)
+
+            (server/start_server 
+                listen_port
                 (fn [request]
-                    (let [json (cheshire/parse-string (slurp (:body request)) true)]
-                        (log/info "Client request: ")
-                        (log/info json)
-                        (async/go (async/>! c [json]))))))
+                    ;; Handle request asynchronously
+                    (async/go
+                        (let [json (cheshire/parse-string (slurp (:body request)) true)]
+                            (log/info "Request: " json)
+                            (async/>! c [json])))))
+            (log/info token "Server started.")
+
             c)))
 
 (defn start_webhook_ssl
     ([token listen port url_path certificate keystore pswd]
         (bot/remove_webhook token)
+        (log/info token "Webhook removed")
         (log/info "After remove_webhook required 2s pause...")
+
         (async/<!! (async/timeout 2000))
-        (let [listen_url (str "https://" listen ":" port "/" url_path)
-              c (async/chan)]
+
+        (let [c (async/chan) 
+              listen_url (str "https://" listen ":" port "/" url_path)]
             (bot/set_webhook token listen_url certificate)
-            (log/info (str "Webhook set: " listen_url))
-            (async/go (server/start_server port 
+            (log/info "Webhook set: " listen_url)
+
+            (server/start_server 
+                port 
                 (fn [request]
-                    (let [json (cheshire/parse-string (slurp (:body request)) true)]
-                        (log/info "Client request: ")
-                        (log/info json)
-                        (async/go (async/>! c [json])))) keystore pswd))
+                    ;; Handle request asynchronously
+                    (async/go
+                        (let [json (cheshire/parse-string (slurp (:body request)) true)]
+                            (log/info "Request: " json)
+                            (async/>! c [json]))))
+                keystore pswd)
+            (log/info token "Server started")
+
             c)))
 
 (defn make_poll [token c offset limit timeout]
@@ -51,7 +68,7 @@
                     (async/go (async/>! c json))
                     (inc (reduce #(max %1 (get %2 :update_id)) offset json)))))
         (catch Exception e
-            (log/error (.printStackTrace e))
+            (log/error e "Long polling exception!")
             offset)))
 
 (defn long_polling [token c limit timeout pause]
@@ -69,8 +86,9 @@
         (start_polling token limit timeout 1000))
     ([token limit timeout pause]
         (bot/remove_webhook token) ;; need to remove webhook to pull updates
-        (let [c (async/chan)]
-            (long_polling token c limit timeout pause))))
+        (log/info token "Webhook removed")
+
+        (long_polling token (async/chan) limit timeout pause)))
 
 (defn _handle [json [handler & other]]
     (if (helpers/wrap ((:pr handler) json))

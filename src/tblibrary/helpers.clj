@@ -33,4 +33,4 @@
     `(try
         ~@f
         (catch Exception e#
-            (log/error (str "Caught exception: " (.getMessage e#))))))
+            (log/error e#))))
