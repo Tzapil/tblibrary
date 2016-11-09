@@ -92,7 +92,7 @@
 
 (defn _handle [json [handler & other]]
     (if (helpers/wrap ((:pr handler) json))
-        (helpers/wrap ((:f handler) json))
+        (async/go (helpers/wrap ((:f handler) json)))
         (if (> (count other) 0)
           (_handle json other))))
 
