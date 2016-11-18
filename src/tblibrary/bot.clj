@@ -1,5 +1,7 @@
 (ns tblibrary.bot
-    (:require [clj-http.client :as client]
+    (:require [org.httpkit.client :as client]
+              [clojure.tools.logging :as log]
+              [clojure.data.json :as jjson]
               [tblibrary.helpers :as helpers]))
 
 (def base_url "https://api.telegram.org/bot")
@@ -9,38 +11,47 @@
         :accept :json
     })
 
+(defn sync-post [url params]
+    (let [{:keys [status headers body error] :as resp} @(client/post url params)]
+      (log/info "ANSWER" url params resp)
+      (if error
+        (log/error "Failed, exception: " error)
+        resp)))
+
 (defn message [url data]
     (let [fdata (helpers/filter_hash data)]
-        (client/post url (assoc base-json :form-params fdata))))
+        (sync-post url (assoc base-json :body (jjson/write-str fdata)))
+        ;;@(client/post url (assoc base-json :form-params fdata))
+        ))
 
 (defn get_me [token] 
-    (helpers/body_json (client/get (str base_url token "/getMe"))))
+    (helpers/body_json @(client/get (str base_url token "/getMe"))))
 
 (defn get_file [token file_id]
     (let [url (str base_url token "/getFile")
           data {:file_id file_id}]
-        (helpers/body_json (client/get url (assoc base-json :query-params data)))))
+        (helpers/body_json @(client/get url (assoc base-json :query-params data)))))
 
 (defn get_chat [token chat_id] 
     (let [url (str base_url token "/getChat")
           data {:chat_id chat_id}]
-                (helpers/body_json (client/get url (assoc base-json :query-params data)))))
+                (helpers/body_json @(client/get url (assoc base-json :query-params data)))))
 
 (defn get_chat_administrators [token chat_id] 
     (let [url (str base_url token "/getChatAdministrators")
           data {:chat_id chat_id}]
-                (helpers/body_json (client/get url (assoc base-json :query-params data)))))
+                (helpers/body_json @(client/get url (assoc base-json :query-params data)))))
 
 (defn get_chat_members_count [token chat_id] 
     (let [url (str base_url token "/getChatMembersCount")
           data {:chat_id chat_id}]
-                (helpers/body_json (client/get url (assoc base-json :query-params data)))))
+                (helpers/body_json @(client/get url (assoc base-json :query-params data)))))
 
 (defn get_chat_member [token chat_id user_id] 
     (let [url (str base_url token "/getChatMember")
           data {:chat_id chat_id
                 :user_id user_id}]
-                (helpers/body_json (client/get url (assoc base-json :query-params data)))))
+                (helpers/body_json @(client/get url (assoc base-json :query-params data)))))
 
 (defn get_user_profile_photos 
     ([token user_id]
@@ -52,7 +63,7 @@
               data {:user_id user_id
                     :offset offset
                     :limit limit}]
-            (helpers/body_json (client/get url (assoc base-json :query-params data))))))
+            (helpers/body_json @(client/get url (assoc base-json :query-params data))))))
 
 (defn send_message 
     ([token chat_id text]
@@ -163,12 +174,12 @@
     ([token webhook_url]
         (let [url (str base_url token "/setWebhook")
               data {:multipart [{:name "url" :content webhook_url}]}]
-                    (client/post url data)))
+                    @(client/post url data)))
     ([token webhook_url certificate]
         (let [url (str base_url token "/setWebhook")
               data {:multipart [{:name "url" :content webhook_url}
                                 {:name "certificate" :content (clojure.java.io/file certificate)}]}]
-                    (client/post url data))))
+                    @(client/post url data))))
 
 (defn remove_webhook [token] 
     (set_webhook token ""))
@@ -199,7 +210,7 @@
                                 [{:name "chat_id" :content (str chat_id)}
                                  {:name "caption" :content caption}
                                  {:name "photo" :content photo :filename (.getName photo)}])}]
-                    (client/post url data))))
+                    @(client/post url data))))
 
 ;; send_audio method. mp3 files
 (defmulti send_audio 
@@ -233,7 +244,7 @@
                                  {:name "title" :content title}
                                  {:name "performer" :content performer}
                                  {:name "audio" :content audio :filename (.getName audio)}])}]
-                    (client/post url data))))
+                    @(client/post url data))))
 
 ;; send_document method
 (defmulti send_document 
@@ -261,7 +272,7 @@
                                 [{:name "chat_id" :content (str chat_id)}
                                  {:name "caption" :content caption}
                                  {:name "document" :content document :filename (.getName document)}])}]
-                    (client/post url data))))
+                    @(client/post url data))))
 
 ;; send_sticker method
 (defmulti send_sticker 
@@ -283,7 +294,7 @@
               data {:multipart (helpers/filter_multipart 
                                 [{:name "chat_id" :content (str chat_id)}
                                  {:name "sticker" :content sticker :filename (.getName sticker)}])}]
-                    (client/post url data)))
+                    @(client/post url data)))
 
 ;; send_video method
 (defmulti send_video
@@ -311,7 +322,7 @@
                                 [{:name "chat_id" :content (str chat_id)}
                                  {:name "caption" :content caption}
                                  {:name "video" :content video :filename (.getName video)}])}]
-                    (client/post url data))))
+                    @(client/post url data))))
 
 ;; send_voice method. ogg files
 (defmulti send_voice
@@ -333,4 +344,4 @@
               data {:multipart (helpers/filter_multipart 
                                 [{:name "chat_id" :content (str chat_id)}
                                  {:name "voice" :content voice :filename (.getName voice)}])}]
-                    (client/post url data)))
+                    @(client/post url data)))
