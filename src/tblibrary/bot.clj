@@ -7,13 +7,12 @@
 (def base_url "https://api.telegram.org/bot")
 
 (def base-json {
-        :content-type :json
-        :accept :json
+        :headers {"Content-Type" "application/json"}
     })
 
 (defn sync-post [url params]
     (let [{:keys [status headers body error] :as resp} @(client/post url params)]
-      (log/info "ANSWER" url params resp)
+      ;;(log/info "ANSWER" url params resp)
       (if error
         (log/error "Failed, exception: " error)
         resp)))
@@ -148,6 +147,9 @@
         (get_updates token offset limit 0))
     ([token offset limit timeout]
         (let [url (str base_url token "/getUpdates")]
+                    (log/info "MESSAGE!!!" url offset url (assoc base-json :body (jjson/write-str {
+                            :offset offset
+                        })))
                     (message url {
                             :offset offset
                         }))))

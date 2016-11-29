@@ -22,15 +22,17 @@
 (defn third [a]
     (get a 2))
 
-(defn zip-str [s]
-  ;;(-> s xml/parse))
-    ;;(-> s xml/parse zip/xml-zip))
+(defn zip-str2 [s]
   (zip/xml-zip 
-    (let [input_stream (java.io.ByteArrayInputStream. (.getBytes s))
-          input_reader (java.io.InputStreamReader. input_stream "UTF-8")
-          input_source (org.xml.sax.InputSource. input_reader)]
+      (xml/parse (java.io.ByteArrayInputStream. (.getBytes s)))))
+
+(defn zip-str [s]
+   (let [input_stream (java.io.ByteArrayInputStream. (.getBytes s))
+         input_reader (java.io.InputStreamReader. input_stream "UTF-8")
+         input_source (org.xml.sax.InputSource. input_reader)]
         (.setEncoding input_source "UTF-8")
-        (xml/parse input_source))))
+        (zip/xml-zip  
+          (xml/parse input_source))))
 
 (defn sync-get [url params]
   (let [{:keys [status headers body error] :as resp} @(client/get url params)]
@@ -64,7 +66,8 @@
                              :query-params {:u user-id
                                             :status "all"
                                             :type "anime"}})
-          body (zip-str answer)         entries (navigation/xml-> body
+          body (zip-str answer)         
+          entries (navigation/xml-> body
                   :myanimelist
                   :anime)
           anm-lst (vec (map (fn [entry] (vec (map #(get-tag-text entry %) [:series_title :series_episodes :my_watched_episodes :my_status :my_score :series_animedb_id]))) entries))]

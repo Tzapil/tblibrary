@@ -32,6 +32,7 @@
             c)))
 
 (defn make_poll [token c offset limit timeout]
+    (log/info "Long poll offset!" offset)
     (try
         (let [updates (bot/get_updates token offset limit timeout)
               json (helpers/body_json updates)
@@ -39,6 +40,7 @@
             (if (= updates 0)
                 offset
                 (do
+                    (log/info "New message!!" json)
                     (async/go (async/>! c json))
                     (inc (reduce #(max %1 (get %2 :update_id)) offset json)))))
         (catch Exception e
