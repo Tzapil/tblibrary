@@ -7,6 +7,8 @@
                  ;; Client Server
                  [http-kit "2.2.0"]
                  [cheshire "5.5.0"]
+                 ;; json
+                 [org.clojure/data.json "0.2.6"]
                  ;; Async
                  [org.clojure/core.async "0.2.374"]
                  ;; Ring Server
