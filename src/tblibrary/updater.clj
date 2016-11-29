@@ -7,6 +7,8 @@
               [clojure.tools.logging :as log]))
 
 (defn start_webhook
+    ([token listen port url_path]
+        (start_webhook token listen port url_path port))
     ([token listen port url_path listen_port]
         (bot/remove_webhook token)
         (log/info token "Webhook removed")
@@ -21,43 +23,16 @@
 
             (server/start_server 
                 listen_port
-                (fn [request]
+                (fn [ring-request]
                     ;; Handle request asynchronously
-                    (async/go
-                        (let [json (cheshire/parse-string (slurp (:body request)) true)]
-                            (log/info "Request: " json)
-                            (async/>! c [json])))))
+                    (let [json (cheshire/parse-string (slurp (:body ring-request)) true)]
+                        (log/info "Request: " json)
+                        (async/>! c [json]))))
             (log/info token "Server started.")
-
-            c)))
-
-(defn start_webhook_ssl
-    ([token listen port url_path certificate keystore pswd]
-        (bot/remove_webhook token)
-        (log/info token "Webhook removed")
-        (log/info "After remove_webhook required 2s pause...")
-
-        (async/<!! (async/timeout 2000))
-
-        (let [c (async/chan) 
-              listen_url (str "https://" listen ":" port "/" url_path)]
-            (bot/set_webhook token listen_url certificate)
-            (log/info "Webhook set: " listen_url)
-
-            (server/start_server 
-                port 
-                (fn [request]
-                    ;; Handle request asynchronously
-                    (async/go
-                        (let [json (cheshire/parse-string (slurp (:body request)) true)]
-                            (log/info "Request: " json)
-                            (async/>! c [json]))))
-                keystore pswd)
-            (log/info token "Server started")
-
             c)))
 
 (defn make_poll [token c offset limit timeout]
+    (log/info "Long poll offset!" offset)
     (try
         (let [updates (bot/get_updates token offset limit timeout)
               json (helpers/body_json updates)
@@ -65,6 +40,7 @@
             (if (= updates 0)
                 offset
                 (do
+                    (log/info "New message!!" json)
                     (async/go (async/>! c json))
                     (inc (reduce #(max %1 (get %2 :update_id)) offset json)))))
         (catch Exception e

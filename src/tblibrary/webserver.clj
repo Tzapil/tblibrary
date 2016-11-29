@@ -1,18 +1,8 @@
 (ns tblibrary.webserver
-    (:require [ring.adapter.jetty :as jetty]))
+    (:require 
+        [ring.adapter.jetty :as jetty]
+        [org.httpkit.server :as server]))
 
 (defn start_server
-    ([port handler]
-        (jetty/run-jetty handler {
-            :port port
-            :join? false
-        }))
-    ([port handler keystore key]
-        (jetty/run-jetty handler {
-            :port 8081
-            :ssl? true
-            :ssl-port port
-            :join? false
-            :keystore keystore
-            :key-password key
-        })))
+    [port handler]
+        (server/run-server handler {:port port}))
