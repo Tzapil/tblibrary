@@ -31,7 +31,7 @@
                     ;; Handle request asynchronously
                     (let [json (cheshire/parse-string (slurp (:body ring-request)) true)]
                         (log/info "Request: " json)
-                        (async/>! c [json])
+                        (async/go (async/>! c [json]))
                         success_answer)))
             (log/info token "Server started.")
             c)))
