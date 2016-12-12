@@ -6,6 +6,10 @@
               [cheshire.core :as cheshire]
               [clojure.tools.logging :as log]))
 
+(def success_answer {:status  200
+                     :headers {"Content-Type" "text/plain"}
+                     :body    "THX!"})
+
 (defn start_webhook
     ([token listen port url_path]
         (start_webhook token listen port url_path port))
@@ -27,7 +31,8 @@
                     ;; Handle request asynchronously
                     (let [json (cheshire/parse-string (slurp (:body ring-request)) true)]
                         (log/info "Request: " json)
-                        (async/go (async/>! c [json])))))
+                        (async/>! c [json])
+                        success_answer)))
             (log/info token "Server started.")
             c)))
 
@@ -67,10 +72,11 @@
         (long_polling token (async/chan) limit timeout pause)))
 
 (defn _handle [json [handler & other]]
-    (if (helpers/wrap ((:pr handler) json))
-        (async/go (helpers/wrap ((:f handler) json)))
-        (if (> (count other) 0)
-          (_handle json other))))
+    (helpers/wrap 
+        (if ((:pr handler) json)
+            (async/go (helpers/wrap ((:f handler) json)))
+            (if (> (count other) 0)
+              (_handle json other)))))
 
 (defn start_handlers [handlers c]
     (async/go-loop []
